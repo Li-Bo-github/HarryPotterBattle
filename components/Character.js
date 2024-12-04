@@ -1,7 +1,3 @@
-// Character.js
-import { View, Text } from 'react-native';
-import Spell from './Spell';
-
 export default class Character {
   constructor(name, hp, attack, defend, spells = []) {
     this.name = name;
@@ -13,9 +9,8 @@ export default class Character {
 
   // 受到伤害
   takeDamage(damage) {
-    const effectiveDamage = Math.max(damage - this.defend, 0);
-    this.hp -= effectiveDamage;
-    console.log(`${this.name} takes ${effectiveDamage} damage! Remaining HP: ${this.hp}`);
+    this.hp -= damage;
+    console.log(`${this.name} takes ${damage} damage! Remaining HP: ${this.hp}`);
   }
 
   // 检查角色是否活着

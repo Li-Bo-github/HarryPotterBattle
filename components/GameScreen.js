@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import Harry from './Harry';
 import Ron from './Ron';
 import Hermione from './Hermione';
@@ -13,7 +13,14 @@ const GameScreen = () => {
   const [logs, setLogs] = useState([]);
   const [difficulty, setDifficulty] = useState('normal');
   const [playerTurn, setPlayerTurn] = useState(true);
-  const [hoveredSpellIndex, setHoveredSpellIndex] = useState(null); // Track hover effect
+  const [round, setRound] = useState(1); // Track the current round
+  const scrollViewRef = useRef(null);
+
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollToEnd({ animated: true });
+    }
+  }, [logs]);
 
   const selectCharacter = (character) => {
     setPlayer(character);
@@ -26,6 +33,7 @@ const GameScreen = () => {
       const spell = player.spells[spellIndex];
       if (spell) {
         const damage = spell.castSpell(player, enemy);
+
         setLogs((prevLogs) => [
           ...prevLogs,
           `${player.name} casts ${spell.name} on ${enemy.name} for ${damage} damage!`
@@ -40,10 +48,19 @@ const GameScreen = () => {
         }
 
         setPlayerTurn(false);
-        setTimeout(() => handleEnemyTurn(), 50);
+        setTimeout(() => {
+          handleEnemyTurn();
+
+          setLogs((prevLogs) => [
+            ...prevLogs,
+            `--- Round ${round + 1} ---`
+          ]);
+          setRound((prevRound) => prevRound + 1);
+        }, 50);
       }
     }
   };
+
 
   const handleEnemyTurn = () => {
     if (!player || !enemy) return;
@@ -69,10 +86,27 @@ const GameScreen = () => {
     setPlayerTurn(true);
   };
 
+  const handleRestart = () => {
+    setPlayer(null);
+    setEnemy(null);
+    setLogs([]);
+    setPlayerTurn(true);
+  };
+
+  const selectDifficulty = (level) => {
+    setDifficulty(level);
+    setLogs([`Difficulty set to ${level}. Choose your character.`]);
+    setPlayer(null); // Reset the player when difficulty is changed
+  };
+
+
   return (
     <View style={styles.container}>
       {/* Top Container: Info */}
       <View style={styles.infoContainer}>
+        {!player && (
+          <Text style={styles.header}>Harry Potter: Protect Chancellor</Text>
+        )}
         {player && (
           <View style={styles.characterCard}>
             <Text style={styles.title}>Player</Text>
@@ -97,6 +131,23 @@ const GameScreen = () => {
       <View style={styles.middleContainer}>
         {!player && (
           <View style={styles.selectionContainer}>
+            {/* Difficulty Selection */}
+            <Text style={styles.header}>Select Difficulty:</Text>
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => selectDifficulty('normal')}
+              >
+                <Text style={styles.buttonText}>Normal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => selectDifficulty('hard')}
+              >
+                <Text style={styles.buttonText}>Hard</Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={styles.header}>Select your character:</Text>
             <View style={styles.buttonGroup}>
               <TouchableOpacity style={styles.button} onPress={() => selectCharacter(new Harry())}>
@@ -121,51 +172,74 @@ const GameScreen = () => {
                   key={index}
                   style={styles.button}
                   onPress={() => handlePlayerSpell(index)}
-                  onPressIn={() => setHoveredSpellIndex(index)} // Mouse hover effect
-                  onPressOut={() => setHoveredSpellIndex(null)} // Reset hover effect
                 >
                   <Text style={styles.buttonText}>
-                    {spell.name} {hoveredSpellIndex === index && `(${spell.damage} DMG)`}
+                    {spell.name} {`(${spell.damage} DMG)`}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
         )}
+
+        {/* Restart Button */}
+        {player && !player.isAlive() && (
+          <View style={styles.restartContainer}>
+            <TouchableOpacity style={styles.button} onPress={handleRestart}>
+              <Text style={styles.buttonText}>Restart</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {/* Bottom Container: Logs */}
-      <ScrollView style={styles.logContainer}>
-        <Text style={styles.header}>Battle History:</Text>
-        {logs.map((log, index) => (
-          <Text key={index} style={styles.logText}>
-            {/* Bold important keywords in logs */}
-            {log.split(' ').map((word, i) => {
-              if (word === player?.name || word === enemy?.name || word === 'casts') {
-                return <Text key={i} style={styles.boldText}>{word} </Text>;
-              } else if (word.includes('damage')) {
-                return <Text key={i} style={styles.boldText}>{word} </Text>;
+      <ScrollView
+      ref={scrollViewRef}
+      style={styles.logContainer}
+      showsVerticalScrollIndicator={true}>
+      <Text style={styles.header}>Battle History:</Text>
+      {logs.map((log, index) => (
+        <Text key={index} style={log.includes('Round') ? styles.roundText : styles.logText}>
+          {log.includes('Round') ? (
+            log
+          ) : (
+            log.split(' ').map((word, i) => {
+              if ([player?.name, enemy?.name, 'casts'].includes(word)) {
+                return (
+                  <Text key={i} style={styles.boldText}>
+                    {word}{' '}
+                  </Text>
+                );
+              }
+              if (word.includes('damage')) {
+                return (
+                  <Text key={i} style={styles.boldText}>
+                    {word}{' '}
+                  </Text>
+                );
               }
               return word + ' ';
-            })}
-          </Text>
-        ))}
-      </ScrollView>
+            })
+          )}
+        </Text>
+      ))}
+    </ScrollView>
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#f0f0f0',
     padding: 20,
+    position: 'relative',
+    height: '100%',
   },
   infoContainer: {
     flexDirection: 'row', // Align items horizontally
     justifyContent: 'space-between', // Space out the player and enemy sections
     paddingBottom: 20,
-    marginBottom: 20,
+    marginBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     alignItems: 'flex-start', // Align items to the top
@@ -189,7 +263,7 @@ const styles = StyleSheet.create({
   middleContainer: {
     justifyContent: 'center', // Vertically center content
     alignItems: 'center',
-    marginBottom: 20, // Prevent overlap with the log container
+    marginBottom: 5, // Prevent overlap with the log container
   },
   selectionContainer: {
     justifyContent: 'center',
@@ -214,28 +288,40 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  restartContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
   logContainer: {
-    maxHeight: height * 0.5, // Make sure log container doesn't take up too much space
+    maxHeight: height * 0.55, // Make sure log container doesn't take up too much space
     backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 10,
+    padding: 5,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 3,
     marginTop: 'auto', // Ensures the log container sticks to the bottom
   },
-  logText: {
+  roundText: {
+    textAlign: 'center',
     fontSize: 16,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    color: '#555',
+  },
+  logText: {
+    fontSize: 14,
     color: '#333',
-    marginBottom: 5,
+    marginVertical: 2,
   },
   boldText: {
     fontWeight: 'bold',
+    color: '#000',
   },
   header: {
     fontSize: 22,
@@ -244,4 +330,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
 export default GameScreen;
