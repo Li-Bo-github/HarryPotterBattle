@@ -11,7 +11,7 @@ class Voldemort extends Character {
 
     // 根据难度调整攻击力
     let attack = difficulty === 'hard' ? 60 : 50;
-    super('Lord Voldemort', 200, attack, 30, spells);
+    super('Lord Voldemort', 2000, attack, 30, spells);
   }
 }
 

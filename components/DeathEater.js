@@ -10,7 +10,7 @@ class DeathEater extends Character {
 
     // 根据难度调整攻击力
     let attack = difficulty === 'hard' ? 50 : 40;
-    super('Death Eater', 100, attack, 20, spells);
+    super('Death Eater', 1000, attack, 20, spells);
   }
 }
 

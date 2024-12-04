@@ -8,7 +8,7 @@ class Harry extends Character {
       new Spell('Stupefy', 50),
       new Spell('Expecto Patronum', 70)
     ];
-    super('Harry Potter', 100, 40, 10, spells);
+    super('Harry Potter', 1000, 40, 10, spells);
   }
 }
 

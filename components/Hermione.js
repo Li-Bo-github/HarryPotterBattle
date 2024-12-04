@@ -8,7 +8,7 @@ class Hermione extends Character {
       new Spell('Leviosa', 40),
       new Spell('Incendio', 60)
     ];
-    super('Hermione Granger', 85, 45, 20, spells);
+    super('Hermione Granger', 850, 45, 20, spells);
   }
 }
 
